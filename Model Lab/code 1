@@ -1,0 +1,37 @@
+def pluralize(noun):
+    noun = noun.lower()
+    states = ["q0"]
+
+    if noun.endswith(("s", "x", "z", "ch", "sh")):
+        plural = noun + "es"
+        states.append("q_es")
+
+    elif noun.endswith("y") and len(noun) > 1 and noun[-2] not in "aeiou":
+        plural = noun[:-1] + "ies"
+        states.append("q_ies")
+
+    elif noun.endswith("fe"):
+        plural = noun[:-2] + "ves"
+        states.append("q_ves")
+
+    elif noun.endswith("f"):
+        plural = noun[:-1] + "ves"
+        states.append("q_ves")
+
+    else:
+        plural = noun + "s"
+        states.append("q_s")
+
+    states.append("q_final")
+
+    return plural, states
+
+
+print("DIGITAL CATALOG MORPHOLOGY PROCESSOR")
+noun = input("Enter a singular noun: ")
+
+plural, states = pluralize(noun)
+
+print("\nInput Noun:", noun)
+print("Transition Sequence:", " -> ".join(states))
+print("Generated Plural Form:", plural)
