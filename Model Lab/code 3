@@ -1,0 +1,76 @@
+singular_nouns = [
+    "student", "boy", "girl", "teacher",
+    "company", "bank", "child", "dog"
+]
+
+plural_nouns = [
+    "students", "boys", "girls", "teachers",
+    "companies", "banks", "children", "dogs"
+]
+
+singular_verbs = [
+    "is", "has", "does", "studies", "works",
+    "plays", "runs", "eats"
+]
+
+plural_verbs = [
+    "are", "have", "do", "study", "work",
+    "play", "run", "eat"
+]
+
+
+def check_grammar(sentence):
+    words = sentence.lower().replace(".", "").split()
+
+    subject = None
+    verb = None
+
+    for i, word in enumerate(words):
+        if word in singular_verbs or word in plural_verbs:
+            verb = word
+
+            for j in range(i - 1, -1, -1):
+                if words[j] in singular_nouns + plural_nouns:
+                    subject = words[j]
+                    break
+
+            break
+
+    if subject is None or verb is None:
+        print("Unable to identify subject or verb.")
+        return
+
+    if subject in singular_nouns:
+        subject_feature = "Singular"
+    else:
+        subject_feature = "Plural"
+
+    if verb in singular_verbs:
+        verb_feature = "Singular"
+    else:
+        verb_feature = "Plural"
+
+    print("\nSentence:", sentence)
+    print("Subject:", subject)
+    print("Subject Feature:", subject_feature)
+    print("Verb:", verb)
+    print("Verb Feature:", verb_feature)
+
+    if subject_feature == verb_feature:
+        print("\nResult: Grammatically Correct")
+        print("Explanation: Subject and verb agree in number.")
+    else:
+        print("\nResult: Grammatical Error")
+        print("Explanation: Subject and verb have incompatible")
+        print("number features.")
+
+        if subject_feature == "Plural":
+            print("Suggestion: Use a plural verb.")
+        else:
+            print("Suggestion: Use a singular verb.")
+
+
+print("E-LEARNING GRAMMAR CONSISTENCY CHECKER")
+
+sentence = input("Enter a sentence: ")
+check_grammar(sentence)
