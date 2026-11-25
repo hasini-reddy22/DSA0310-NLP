@@ -1,0 +1,96 @@
+import math
+import re
+from collections import Counter
+
+def preprocess(text):
+    text = text.lower()
+    words = re.findall(r'\b[a-z]+\b', text)
+    return words
+
+def calculate_idf(documents):
+    N = len(documents)
+    idf = {}
+
+    vocabulary = set(
+        word for doc in documents for word in doc
+    )
+
+    for word in vocabulary:
+        df = sum(1 for doc in documents if word in doc)
+        idf[word] = math.log((N + 1) / (df + 1)) + 1
+
+    return idf
+
+def tfidf_vector(words, idf):
+    counts = Counter(words)
+    total = len(words)
+
+    vector = {}
+
+    for word, count in counts.items():
+        tf = count / total
+        vector[word] = tf * idf.get(word, 0)
+
+    return vector
+
+def cosine_similarity(v1, v2):
+    common = set(v1) | set(v2)
+
+    dot_product = sum(
+        v1.get(word, 0) * v2.get(word, 0)
+        for word in common
+    )
+
+    norm1 = math.sqrt(sum(x*x for x in v1.values()))
+    norm2 = math.sqrt(sum(x*x for x in v2.values()))
+
+    if norm1 == 0 or norm2 == 0:
+        return 0
+
+    return dot_product / (norm1 * norm2)
+
+
+print("ACADEMIC RESEARCH DOCUMENT RANKING SYSTEM")
+
+n = int(input("\nEnter number of research documents: "))
+
+documents = {}
+processed_docs = []
+
+for i in range(n):
+    doc_id = input(f"\nEnter document ID {i+1}: ")
+    abstract = input("Enter research abstract: ")
+
+    documents[doc_id] = abstract
+    processed_docs.append(preprocess(abstract))
+
+query = input("\nEnter search query: ")
+query_words = preprocess(query)
+
+idf = calculate_idf(processed_docs)
+
+query_vector = tfidf_vector(query_words, idf)
+
+results = []
+
+for doc_id, words in zip(documents.keys(), processed_docs):
+    doc_vector = tfidf_vector(words, idf)
+
+    score = cosine_similarity(
+        query_vector, doc_vector
+    )
+
+    results.append((doc_id, score))
+
+results.sort(key=lambda x: x[1], reverse=True)
+
+print("\nRESEARCH DOCUMENT RANKING")
+print("----------------------------------------")
+print("Document ID\tRelevance Score\tRank")
+print("----------------------------------------")
+
+for rank, (doc_id, score) in enumerate(results, 1):
+    print(f"{doc_id}\t\t{score:.4f}\t\t{rank}")
+
+print("----------------------------------------")
+print("Ranking completed successfully.")
