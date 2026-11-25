@@ -1,0 +1,116 @@
+import math
+
+corpus = [
+    [("company", "N"), ("reports", "V"), ("profit", "N")],
+    [("bank", "N"), ("reports", "V"), ("revenue", "N")],
+    [("the", "DET"), ("company", "N"), ("reports", "V"), ("high", "ADJ"), ("profit", "N")],
+    [("the", "DET"), ("bank", "N"), ("records", "V"), ("financial", "ADJ"), ("data", "N")],
+    [("financial", "ADJ"), ("reports", "N"), ("show", "V"), ("growth", "N")]
+]
+
+tags = ["DET", "N", "V", "ADJ"]
+START = "START"
+
+transition = {}
+emission = {}
+tag_count = {tag: 0 for tag in tags}
+
+for sentence in corpus:
+    previous = START
+
+    for word, tag in sentence:
+        transition[(previous, tag)] = transition.get((previous, tag), 0) + 1
+        emission[(tag, word)] = emission.get((tag, word), 0) + 1
+        tag_count[tag] += 1
+        previous = tag
+
+def trans_prob(previous, current):
+    count = transition.get((previous, current), 0)
+    total = sum(
+        transition.get((previous, t), 0) for t in tags
+    )
+    return (count + 1) / (total + len(tags))
+
+def emit_prob(tag, word):
+    count = emission.get((tag, word), 0)
+    vocabulary = {
+        w for (t, w) in emission
+    }
+    return (count + 1) / (
+        tag_count[tag] + len(vocabulary) + 1
+    )
+
+def viterbi(words):
+    dp = [{}]
+    back = [{}]
+
+    for tag in tags:
+        dp[0][tag] = math.log(
+            trans_prob(START, tag)
+        ) + math.log(emit_prob(tag, words[0]))
+        back[0][tag] = None
+
+    for i in range(1, len(words)):
+        dp.append({})
+        back.append({})
+
+        for tag in tags:
+            candidates = [
+                (
+                    dp[i-1][prev] +
+                    math.log(trans_prob(prev, tag)) +
+                    math.log(emit_prob(tag, words[i])),
+                    prev
+                )
+                for prev in tags
+            ]
+
+            best_score, best_prev = max(candidates)
+            dp[i][tag] = best_score
+            back[i][tag] = best_prev
+
+    last_tag = max(dp[-1], key=dp[-1].get)
+    best_score = dp[-1][last_tag]
+
+    sequence = [last_tag]
+
+    for i in range(len(words)-1, 0, -1):
+        last_tag = back[i][last_tag]
+        sequence.append(last_tag)
+
+    sequence.reverse()
+
+    return sequence, best_score
+
+
+print("FINANCIAL REPORT POS CLASSIFICATION SYSTEM")
+
+sentence = input("Enter a financial sentence: ").lower()
+words = sentence.split()
+
+if not words:
+    print("Please enter a valid sentence.")
+else:
+    predicted, score = viterbi(words)
+
+    print("\nInput Sentence:", sentence)
+    print("\nPredicted POS Sequence:")
+
+    for word, tag in zip(words, predicted):
+        print(word, ":", tag)
+
+    print("\nProbability Information:")
+
+    for i, (word, tag) in enumerate(zip(words, predicted)):
+        previous = START if i == 0 else predicted[i-1]
+
+        tp = trans_prob(previous, tag)
+        ep = emit_prob(tag, word)
+
+        print(
+            word, "->", tag,
+            "| Transition Probability:", round(tp, 4),
+            "| Emission Probability:", round(ep, 4)
+        )
+
+    print("\nBest Sequence Log Probability:", round(score, 4))
